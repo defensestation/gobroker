@@ -20,8 +20,8 @@ if err != nil {
 - Publish Message
 ```
 err = ex.Publish(
-		"servive.event.type", 				//route key
-		map[string]string{"msg": "test"} 	//message, type: map[string]interface{}
+		"servive.event.type", //route key
+		map[string]string{"msg": "test"} //message, type: map[string]interface{}
 		)
 if err != nil {
 	...
@@ -32,9 +32,9 @@ if err != nil {
 ```
 err = ex.RunConsumer(
 		"exchange_name", 
-		"service.event.type", 	//route key
-		ConsumeMethod, 			//customerMethodName
-		"" 						//queue name, leave empty for exclusive queue
+		"service.event.type", //route key
+		ConsumeMethod, //customerMethodName
+		"" //queue name, leave empty for exclusive queue
 		)
 if err != nil {
 	...
