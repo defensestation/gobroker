@@ -6,6 +6,7 @@ import  (
 	amqp "github.com/streadway/amqp"
 	time "time"
 	log  "log"
+	errors "errors"
 )
 
 // channel limit per connection
@@ -13,6 +14,7 @@ var channelLimit = 50 // max can be 100
 
 type Channel struct {
 	*amqp.Channel
+	Status string
 	Id int
 }
 
@@ -20,10 +22,7 @@ type Channel struct {
 func (c *Connection) AddChannel() (*Channel, error) {
 	// check connection if live, if not retry to get the connection
 	if c.Status != "live" {
-		// retry to get the connection. maybe add multiple retries
-		if err := c.setConnection(); err != nil {
-			return nil, err
-		}
+		return nil, errors.New("connection not live")
 	}
 
 	//pool length 
@@ -41,20 +40,24 @@ func (c *Connection) AddChannel() (*Channel, error) {
 	}
 
 	// set the id of channel as index
-	c.ChannelPool[channelId] = &Channel{ch, Id: channelId}
+	channel := &Channel{ch, "live", channelId,}
+	c.ChannelPool[channelId] = channel
 
 	// start go routine that listen for connection close
  	go func() {
 		for {
-			reason, ok := <-ch.NotifyClose(make(chan *amqp.Error))
+			reason, ok := <-channel.NotifyClose(make(chan *amqp.Error))
+
 			// exit this goroutine if closed by developer
-			if !ok || ch.IsClosed() {
-				log.Printf("channel closed with id:%v", channelId)
-				channel.Close() // close again, ensure closed flag set when connection closed
+			if !ok {
+				log.Printf("channel closed by developer with id:%v", channelId)
+				ch.Close() // close again, ensure closed flag set when connection closed
 				// delete channel from pool
 				delete(c.ChannelPool, channelId)	
 				break
 			}
+			channel.Status = reason.Reason
+
 			log.Printf("channel closed, reason: %v", reason)
 
 			// reconnect if not closed by developer
@@ -64,10 +67,10 @@ func (c *Connection) AddChannel() (*Channel, error) {
 
 				ch, err := c.Channel()
 				if err == nil {
-					// update channel
-					c.ChannelPool[channelId] = &Channel{ch, Id: channelId}
+					// set the id of channel as index
+					channel = &Channel{ch, "live", channelId,}
+					c.ChannelPool[channelId] = channel
 					log.Printf("channel recreate success")
-					channel.Channel = ch
 					break
 				}
 
@@ -76,21 +79,24 @@ func (c *Connection) AddChannel() (*Channel, error) {
 		}
 	}()
 
-	return ch, nil
+	return c.ChannelPool[channelId], nil
 }
 
 // get channel can take id to get specific channel
-func (c *Connection) GetChannel(id ...int) (*amqp.Channel, error) {
+func (c *Connection) GetChannel(id ...int) (*Channel, error) {
 	// if id is provided return channel by that id
 	if len(id) != 0 {
-		_, ok := e.ChannelPool[id[0]]
+		_, ok := c.ChannelPool[id[0]]
 		if ok {
-			conn := e.ChannelPool[id[0]]
-			return conn, id[0], nil
+			ch := c.ChannelPool[id[0]]
+			if ch.Status != "live" {
+				return nil, errors.New("channel status not live")
+			}
+			return ch, nil
 		}
 		return nil,  errors.New("invalid id")
 	}
-	
+
 	// get pool length
 	poolLength := len(c.ChannelPool)
 
@@ -101,10 +107,14 @@ func (c *Connection) GetChannel(id ...int) (*amqp.Channel, error) {
 
 	//get channel
 	ch := c.ChannelPool[c.pickCounter]
+
+	// check channel status
+	if ch.Status != "live" {
+		return ch, errors.New("channel status not live")
+	}
+
 	// update pickcounter
 	c.pickCounter =  (c.pickCounter % poolLength) + 1
 
-
 	return ch,  nil
-
 }

@@ -4,30 +4,19 @@
 
 package broker
 
-import  (
-	amqp "github.com/streadway/amqp"
-)
-
 // broker struct
 type Broker struct {
 	Endpoint 	string
 	Type 		string	// only rabbitmq supported
 }
 
+var delay = 5 // reconnet delay 5 seconds
+
 // new broker
-func NewBroker(endpoint string) (*Broker, error) {
+func NewBroker(endpoint string) (*Broker) {
 	// check type of broker if multiple supported
-	broker := &Broker{
+	return &Broker{
 		Endpoint: endpoint,
-		Servicename: servicename,
 		Type: "rabbitmq",
 	}
-
-	// create tcp cpnnection
-	err := broker.connect()
-	if err != nil {
-		return nil, err
-	}
-
-	return broker, nil
 }

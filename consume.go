@@ -3,22 +3,23 @@
 
 package broker
 
-import  (
-        amqp "github.com/streadway/amqp"
-)
-
-
 // only one channel is used per go cosumer
 func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte), queueName string) (error) {
-	// user consumer connection and add new channel for this routine
-        ch, err := e.connections[ConsumerConnection].AddChannel()
+        // get connection
+        conn, err := e.GetConnection(ConsumerConnection)
+        if err != nil {
+                return err
+        }
+
+        // user consumer connection and add new channel for this routine
+        ch, err := conn.AddChannel()
         // check if any errors
         if err != nil {
                 return err
         }
 
         // declare queue
-        q, err  = ch.QueueDeclare(
+        q, err  := ch.QueueDeclare(
                         queueName,              // name
                         true,                   // durable
                         false,                  // delete when unused

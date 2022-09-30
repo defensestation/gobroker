@@ -2,6 +2,11 @@
 // file to build exchange
 package broker
 
+import (
+    amqp "github.com/streadway/amqp"
+    errors "errors"
+)
+
 // exchane struct
 type Exchange struct {
     broker      *Broker
@@ -16,18 +21,21 @@ type ExchangeOptions struct {
     AutoDelete      bool
     Internal        bool
     NoWait          bool
-    Args            interface{}
+    Args            amqp.Table
 }
 
 func (eo *ExchangeOptions) defaultOpts() {
-    eo = &ExchangeOptions{
-        Type:       "topic",
-        Durable     true,
-    }
+    // set defaults
+    eo.Type     = "topic"
+    eo.Durable  = true
 }
 
 // build exchange
 func (b *Broker) BuildExchange(name string, opts ...*ExchangeOptions) (*Exchange, error) {
+    // check exchange name
+    if name == "" {
+        return nil, errors.New("invalid name")
+    }
     // create default exchange
     exchange := &Exchange{broker: b, name:name, connections: map[string]*Connection{}}
 
@@ -48,7 +56,7 @@ func (b *Broker) BuildExchange(name string, opts ...*ExchangeOptions) (*Exchange
     // get a connection channel
     ch, err := publishConn.GetChannel()
     if err != nil {
-        return err
+        return nil, err
     }
     // close this channel as we do not require this active channel until we publish
     defer ch.Close() 

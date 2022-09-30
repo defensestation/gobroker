@@ -18,12 +18,19 @@ type PublishOptions struct {
 func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOptions) (error) {
 	// marshal the golang interface to json
 	jsonString, _ := json.Marshal(body)
-	
+
+	// get connection
+	conn, err := e.GetConnection(PublishConnection)
+	if err != nil {
+		return err
+	}
+
 	// pick connection and channel to publish
-	ch, err := e.connections[PublishConnection].GetChannel()
+	ch, err := conn.GetChannel()
    	if err != nil {
 		return err
 	}
+
 	// do not close this channel. it will be used again for publishing messages
 	// defer ch.Close()
 

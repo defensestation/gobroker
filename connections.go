@@ -6,6 +6,7 @@ import  (
 	amqp "github.com/streadway/amqp"
 	time "time"
 	log  "log"
+	errors "errors"
 )
 
 // connection types
@@ -16,27 +17,27 @@ var (
 
 type Connection struct {
 	*amqp.Connection
-	Type 	  	 string
 	Status 	  	 string
-	ChannelPool  map[string]*Channel
-	lastPick 	 int
+	Type 	  	 string
+	ChannelPool  map[int]*Channel
+	pickCounter  int
 }
 
 // create tls connection to borker
 func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 	// create the dial
-	connection, err := amqp.Dial(e.broker.endpoint)
+	connection, err := amqp.Dial(e.broker.Endpoint)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// set connection
 	e.connections[ctype] = &Connection{
 		connection,
-		Status:   	"live",
-		Type: 	  	ctype,
-		ChannelPool: map[string]*Channel{},
-		pickCounter: 1,
+		"live",
+		ctype,
+		map[int]*Channel{},
+		1,
 	}
 
 	// start go routine that listen for connection close
@@ -46,13 +47,14 @@ func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 			reason, ok := <-connection.NotifyClose(make(chan *amqp.Error))
 			// reset channels and set channel status to dead
 			e.connections[ctype] = &Connection{
-						Status:   	 "dead",
-						ChannelPool: map[string]*Channel{},
+						Status:   	 reason.Reason,
+						ChannelPool: map[int]*Channel{},
 						pickCounter: 1,
 					}
 			// exit this goroutine if closed by developer
 			if !ok {
-				log.Printf("connection is closed")
+				delete(e.connections, ctype)
+				log.Printf("-> connection is closed by developer")
 				break
 			}
 			log.Printf("connection closed, reason: %v", reason)
@@ -62,15 +64,15 @@ func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 				// wait 1s for reconnect
 				time.Sleep(time.Duration(delay) * time.Second)
 
-				connection, err := amqp.Dial(e.broker.endpoint)
+				connection, err := amqp.Dial(e.broker.Endpoint)
 				if err == nil {
 					// set connection
 					e.connections[ctype] = &Connection{
 						connection,
-						Status:   	 "live",
-						Type: 	  	 ctype,
-						ChannelPool: map[string]*Channel{},
-						pickCounter: 1,
+						"live",
+						ctype,
+						map[int]*Channel{},
+						1,
 					}
 					break
 				}
@@ -85,9 +87,12 @@ func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 }
 
 func (e *Exchange) GetConnection(ctype string) (*Connection, error) {
-	_, ok := e.connections[ctype]
-	if ok {
+	// check if connection exists
+	if _, ok := e.connections[ctype]; ok {
 		conn := e.connections[ctype]
+		if conn.Status != "live" {
+			return nil, errors.New("connection status not live")
+		}
 		return conn, nil
 	}
 	return e.AddConnection(ctype)
