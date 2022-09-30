@@ -2,6 +2,9 @@
 
 This package provides a abstraction layer on top of brokers like rabbitmq, amazon mq and make publishing and consuming messages eaiser. Main use-case for this package is micro-service architecture
 
+### Supported Broker
+	- RabbitMQ
+
 ## Usage
 
 - Setup Broker
