@@ -39,7 +39,7 @@ func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte)
                 routeKey,     // routing key
                 exchange,     // exchange
                 false,        // no-wait
-                nil           // arguments
+                nil,           // arguments
         )
         // check if any errors
         if err != nil {

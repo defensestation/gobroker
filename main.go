@@ -20,7 +20,7 @@ func NewBroker(endpoint string) (*Broker, error) {
 	broker := &Broker{
 		Endpoint: endpoint,
 		Servicename: servicename,
-		Type: "rabbitmq"
+		Type: "rabbitmq",
 	}
 
 	// create tcp cpnnection

@@ -19,7 +19,7 @@ type ExchangeOptions struct {
     Args            interface{}
 }
 
-func (eo *ExchangeOptions) default() {
+func (eo *ExchangeOptions) defaultOpts() {
     eo = &ExchangeOptions{
         Type:       "topic",
         Durable     true,
@@ -39,7 +39,7 @@ func (b *Broker) BuildExchange(name string, opts ...*ExchangeOptions) (*Exchange
 
     // set default options
     options := &ExchangeOptions{}
-    options.default()
+    options.defaultOpts()
     // check if options provided
     if len(opts) != 0 {
         options = opts[0]

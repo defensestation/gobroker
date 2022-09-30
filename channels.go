@@ -49,7 +49,7 @@ func (c *Connection) AddChannel() (*Channel, error) {
 			reason, ok := <-ch.NotifyClose(make(chan *amqp.Error))
 			// exit this goroutine if closed by developer
 			if !ok || ch.IsClosed() {
-				log.Printf("channel closed with id:%v" channelId)
+				log.Printf("channel closed with id:%v", channelId)
 				channel.Close() // close again, ensure closed flag set when connection closed
 				// delete channel from pool
 				delete(c.ChannelPool, channelId)	
