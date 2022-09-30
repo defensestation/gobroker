@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	exchangeName = "test-service"
-	routeKey 	 = "test.event.test"
+	exchangeName = "demo-service"
+	routeKey 	 = "demo.event.test"
 	message      = map[string]string{"msg": "test"}
 )
 
