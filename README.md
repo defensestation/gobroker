@@ -9,7 +9,11 @@ This package provides a abstraction layer on top of brokers like rabbitmq, amazo
 
 - Setup Broker
 ```
-newbroker := broker.NewBroker("amqp://guest:guest@127.0.0.1:5672/")
+newbroker := broker.NewBroker("127.0.0.1", &broker.EndpointOptions{
+												Username: "guest", 
+												Password: "guest", 
+												Port: "5672"
+											})
 ```
 
 - Build Exchange
