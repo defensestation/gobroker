@@ -10,10 +10,10 @@ This package provides a abstraction layer on top of brokers like rabbitmq, amazo
 - Setup Broker
 ```
 newbroker := broker.NewBroker("127.0.0.1", &broker.EndpointOptions{
-												Username: "guest", 
-												Password: "guest", 
-												Port: "5672"
-											})
+						Username: "guest", 
+						Password: "guest", 
+						Port: "5672"
+					})
 ```
 
 - Build Exchange
@@ -27,7 +27,7 @@ if err != nil {
 - Publish Message
 ```
 err = ex.Publish(
-		"servive.event.type", 	//route key
+		"servive.event.type", 			//route key
 		map[string]string{"msg": "test"} 	//message, type: map[string]interface{}
 		)
 if err != nil {
@@ -40,8 +40,8 @@ if err != nil {
 err = ex.RunConsumer(
 		"exchange_name", 
 		"service.event.type", 	//route key
-		ConsumeMethod, 	//customerMethodName
-		"" 	//queue name, leave empty for exclusive queue
+		ConsumeMethod, 		//customerMethodName
+		"" 			//queue name, leave empty for exclusive queue
 		)
 if err != nil {
 	...
