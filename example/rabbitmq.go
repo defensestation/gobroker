@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 	json "encoding/json"
-	"github.com/defensestation/go-broker"
+	"github.com/defensestation/gobroker"
 )
 
 var (
