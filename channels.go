@@ -2,11 +2,12 @@
 // file to manage channel
 package broker
 
-import  (
-	amqp "github.com/streadway/amqp"
-	time "time"
-	log  "log"
+import (
 	errors "errors"
+	log "log"
+	time "time"
+
+	amqp "github.com/streadway/amqp"
 )
 
 // channel limit per connection
@@ -15,7 +16,7 @@ var channelLimit = 50 // max can be 100
 type Channel struct {
 	*amqp.Channel
 	Status string
-	Id int
+	Id     int
 }
 
 // create channel for rabbitmq
@@ -25,9 +26,9 @@ func (c *Connection) AddChannel() (*Channel, error) {
 		return nil, errors.New("connection not live")
 	}
 
-	//pool length 
+	// pool length
 	poolLength := len(c.ChannelPool)
-	channelId  := poolLength + 1
+	channelId := poolLength + 1
 
 	if poolLength > channelLimit {
 		return nil, errors.New("channel limit reached")
@@ -35,16 +36,16 @@ func (c *Connection) AddChannel() (*Channel, error) {
 
 	// if connection is well create a channe
 	ch, err := c.Channel()
-   	if err != nil {
+	if err != nil {
 		return nil, err
 	}
 
 	// set the id of channel as index
-	channel := &Channel{ch, "live", channelId,}
+	channel := &Channel{ch, "live", channelId}
 	c.ChannelPool[channelId] = channel
 
 	// start go routine that listen for connection close
- 	go func() {
+	go func() {
 		for {
 			reason, ok := <-channel.NotifyClose(make(chan *amqp.Error))
 
@@ -53,7 +54,7 @@ func (c *Connection) AddChannel() (*Channel, error) {
 				log.Printf("channel closed by developer with id:%v", channelId)
 				ch.Close() // close again, ensure closed flag set when connection closed
 				// delete channel from pool
-				delete(c.ChannelPool, channelId)	
+				delete(c.ChannelPool, channelId)
 				break
 			}
 			channel.Status = reason.Reason
@@ -68,7 +69,7 @@ func (c *Connection) AddChannel() (*Channel, error) {
 				ch, err := c.Channel()
 				if err == nil {
 					// set the id of channel as index
-					channel = &Channel{ch, "live", channelId,}
+					channel = &Channel{ch, "live", channelId}
 					c.ChannelPool[channelId] = channel
 					log.Printf("channel recreate success")
 					break
@@ -94,7 +95,7 @@ func (c *Connection) GetChannel(id ...int) (*Channel, error) {
 			}
 			return ch, nil
 		}
-		return nil,  errors.New("invalid id")
+		return nil, errors.New("invalid id")
 	}
 
 	// get pool length
@@ -105,7 +106,7 @@ func (c *Connection) GetChannel(id ...int) (*Channel, error) {
 		return c.AddChannel()
 	}
 
-	//get channel
+	// get channel
 	ch := c.ChannelPool[c.pickCounter]
 
 	// check channel status
@@ -114,7 +115,7 @@ func (c *Connection) GetChannel(id ...int) (*Channel, error) {
 	}
 
 	// update pickcounter
-	c.pickCounter =  (c.pickCounter % poolLength) + 1
+	c.pickCounter = (c.pickCounter % poolLength) + 1
 
-	return ch,  nil
+	return ch, nil
 }

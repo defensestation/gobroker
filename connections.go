@@ -2,25 +2,26 @@
 // file to manage connection
 package broker
 
-import  (
-	amqp "github.com/streadway/amqp"
-	time "time"
-	log  "log"
+import (
 	errors "errors"
+	log "log"
+	time "time"
+
+	amqp "github.com/streadway/amqp"
 )
 
 // connection types
 var (
-	PublishConnection 	= "publish"
-	ConsumerConnection 	= "consume" 
+	PublishConnection  = "publish"
+	ConsumerConnection = "consume"
 )
 
 type Connection struct {
 	*amqp.Connection
-	Status 	  	 string
-	Type 	  	 string
-	ChannelPool  map[int]*Channel
-	pickCounter  int
+	Status      string
+	Type        string
+	ChannelPool map[int]*Channel
+	pickCounter int
 }
 
 // create tls connection to borker
@@ -41,16 +42,16 @@ func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 	}
 
 	// start go routine that listen for connection close
- 	go func() {
-		 //Listen to NotifyClose
- 		for {
+	go func() {
+		// Listen to NotifyClose
+		for {
 			reason, ok := <-connection.NotifyClose(make(chan *amqp.Error))
 			// reset channels and set channel status to dead
 			e.connections[ctype] = &Connection{
-						Status:   	 reason.Reason,
-						ChannelPool: map[int]*Channel{},
-						pickCounter: 1,
-					}
+				Status:      reason.Reason,
+				ChannelPool: map[int]*Channel{},
+				pickCounter: 1,
+			}
 			// exit this goroutine if closed by developer
 			if !ok {
 				delete(e.connections, ctype)
@@ -80,10 +81,9 @@ func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 				log.Printf("reconnect failed, err: %v", err)
 			}
 		}
-
 	}()
 
-    return e.connections[ctype], nil
+	return e.connections[ctype], nil
 }
 
 func (e *Exchange) GetConnection(ctype string) (*Connection, error) {

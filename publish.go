@@ -3,10 +3,11 @@
 package broker
 
 import (
-    amqp "github.com/streadway/amqp"
-    "encoding/json"
-    "errors"
-    "strings"
+	"encoding/json"
+	"errors"
+	"strings"
+
+	amqp "github.com/streadway/amqp"
 )
 
 type PublishOptions struct {
@@ -15,7 +16,7 @@ type PublishOptions struct {
 }
 
 // expose method to publish messages to exchange
-func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOptions) (error) {
+func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOptions) error {
 	// marshal the golang interface to json
 	jsonString, _ := json.Marshal(body)
 
@@ -27,14 +28,14 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 
 	// pick connection and channel to publish
 	ch, err := conn.GetChannel()
-   	if err != nil {
+	if err != nil {
 		return err
 	}
 
 	// do not close this channel. it will be used again for publishing messages
 	// defer ch.Close()
 
-	// validate routing key 
+	// validate routing key
 	if !validRouteKey(routekey) {
 		return errors.New("invalid routekey")
 	}
@@ -48,22 +49,22 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 
 	// publish message
 	err = ch.Publish(
-		e.name,   				  // exchange
-		routekey, 				  // routing key
-        publisOps.Mandatory, 	  // mandatory
-        publisOps.Immediate, 	  // immediate
-        amqp.Publishing{
-            ContentType: "text/plain",
-            Body:        []byte(jsonString),
-    })
-    // return err
-    if err != nil {
+		e.name,              // exchange
+		routekey,            // routing key
+		publisOps.Mandatory, // mandatory
+		publisOps.Immediate, // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(jsonString),
+		})
+	// return err
+	if err != nil {
 		return err
 	}
-    return nil
+	return nil
 }
 
-// validate route key for format: servicename.event/log/*.* 
+// validate route key for format: servicename.event/log/*.*
 // validate key must altest 3 parts
 func validRouteKey(routekey string) bool {
 	arr := strings.Split(routekey, ".")
