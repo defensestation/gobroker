@@ -27,6 +27,8 @@ type EndpointOptions struct {
 func NewBroker(endpoint string, opts ...*EndpointOptions) *Broker {
 	// check broker options are provided, update endpoint
 	if len(opts) != 0 {
+		options := opts[0]
+
 		// set defaults
 		if options.Protocol == "" {
 			options.Protocol = "amqp"
@@ -35,13 +37,12 @@ func NewBroker(endpoint string, opts ...*EndpointOptions) *Broker {
 			options.Port = "5671"
 		}
 
-		options := opts[0]
 		endpoint = fmt.Sprintf("%s://%s:%s@%s", options.Protocol, options.Username, options.Password, endpoint)
 		// check if port is provided
 		endpoint = fmt.Sprintf("%s:%s/", endpoint, options.Port)
 	} else {
 		// append protocol to endpoint
-		endpoint = fmt.Sprintf("%s://%s", options.Protocol, endpoint)
+		endpoint = endpoint
 	}
 
 	// check type of broker if multiple supported
