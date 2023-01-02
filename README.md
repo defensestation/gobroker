@@ -1,6 +1,10 @@
 # Golang Broker Package
 
-This package provides a abstraction layer on top of brokers like rabbitmq, amazon mq and make publishing and consuming messages eaiser. Main use-case for this package is micro-service architecture
+This package provides an abstraction layer on top of brokers like RabbitMQ, AmazonMQ and make publishing and consuming messages easier while following best practices. Main use-case for this package is micro-service architecture.
+
+## Features
+- Separate connection for publishing and consuming
+- Connection and Channel pooling
 
 ### Supported Broker
 	- RabbitMQ
@@ -54,9 +58,18 @@ func ConsumeMethod(message []byte) {
 	response := make(map[string]string)
 	json.Unmarshal(message, &response) 
 
-	fmt.Println("Message Recived:%v", response)
+	fmt.Println("Message Recieved:%v", response)
 }
 ```
 
+## Upcoming Features
+- AmazonMQ Support
+
 ## Example
 [Full example](example/)
+
+## Contributing
+We welcome contributions to gobroker. If you would like to report a bug or request a new feature, please open an issue on GitHub. If you would like to contribute code, please submit a pull request.
+
+## License
+GoBroker is licensed under the (MIT License)[license.md].
