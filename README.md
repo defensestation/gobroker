@@ -72,4 +72,4 @@ func ConsumeMethod(message []byte) {
 We welcome contributions to gobroker. If you would like to report a bug or request a new feature, please open an issue on GitHub. If you would like to contribute code, please submit a pull request.
 
 ## License
-GoBroker is licensed under the [MIT License](license.md).
+GoBroker is licensed under the [MIT License](LICENSE.md).
