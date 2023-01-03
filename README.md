@@ -12,7 +12,7 @@ This package provides an abstraction layer on top of brokers like RabbitMQ, Amaz
 ## Usage
 
 - Setup Broker
-```
+```go
 newbroker := broker.NewBroker("127.0.0.1", &broker.EndpointOptions{
 						Username: "guest", 
 						Password: "guest", 
@@ -21,7 +21,7 @@ newbroker := broker.NewBroker("127.0.0.1", &broker.EndpointOptions{
 ```
 
 - Build Exchange
-```
+```go
 ex, err := newbroker.BuildExchange("exchange-name")
 if err != nil {
 	...
@@ -29,7 +29,7 @@ if err != nil {
 ```
 
 - Publish Message
-```
+```go
 err = ex.Publish(
 		"servive.event.type", 			//route key
 		map[string]string{"msg": "test"} 	//message, type: map[string]interface{}
@@ -40,7 +40,7 @@ if err != nil {
 ```
 
 - Start Consumer
-```
+```go
 err = ex.RunConsumer(
 		"exchange_name", 
 		"service.event.type", 	//route key
@@ -53,7 +53,7 @@ if err != nil {
 ```
 
 - Consume Method
-```
+```go
 func ConsumeMethod(message []byte) {
 	response := make(map[string]string)
 	json.Unmarshal(message, &response) 

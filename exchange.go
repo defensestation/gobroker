@@ -5,7 +5,7 @@ package broker
 import (
 	errors "errors"
 
-	amqp "github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // exchane struct

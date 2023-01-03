@@ -18,7 +18,7 @@ func main() {
 	// create broker
 	// endpoint does not require to add protocol
 	// endpoint options can be provided: &EndpointOptions{Username: "guest", Password: "guest", Port: "5672"}
-	newbroker := broker.NewBroker("172.18.0.2", &broker.EndpointOptions{Username: "guest", Password: "guest", Port: "5672"})
+	newbroker := broker.NewBroker("172.18.0.4", &broker.EndpointOptions{Username: "guest", Password: "guest", Port: "5672"})
 
 	// build exchange
 	ex, err := newbroker.BuildExchange(exchangeName)
