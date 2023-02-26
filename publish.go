@@ -11,6 +11,7 @@ import (
 )
 
 type PublishOptions struct {
+	ExternalExchange string
 	Mandatory bool
 	Immediate bool
 }
@@ -42,14 +43,18 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 
 	// publish options
 	publisOps := &PublishOptions{}
+	publishExchangeName := e.name
 	// check if options provided
 	if len(opts) != 0 {
 		publisOps = opts[0]
+		if opts[0].ExternalExchange != "" {
+			publishExchangeName = opts[0].ExternalExchange
+		}
 	}
 
 	// publish message
 	err = ch.Publish(
-		e.name,              // exchange
+		publishExchangeName, // exchange
 		routekey,            // routing key
 		publisOps.Mandatory, // mandatory
 		publisOps.Immediate, // immediate
