@@ -44,7 +44,7 @@ func (e *Exchange) QueueDeclareAndBind(exchange, routeKey, queueName string, ch 
 // only one channel is used per go cosumer
 func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte), queueName string) error {
 	// get connection
-	conn, err := e.GetConnection(ConsumerConnection)
+	conn, err := e.broker.GetConnection(ConsumerConnection)
 	if err != nil {
 		return err
 	}

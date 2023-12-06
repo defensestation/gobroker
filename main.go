@@ -13,6 +13,7 @@ var delay = 5 // reconnet delay 5 seconds
 type Broker struct {
 	Endpoint string
 	Type     string // only rabbitmq supported
+	connections map[string]*Connection
 }
 
 // broker options like username password
@@ -50,4 +51,52 @@ func NewBroker(endpoint string, opts ...*EndpointOptions) *Broker {
 		Endpoint: endpoint,
 		Type:     "rabbitmq",
 	}
+}
+
+
+// only declare and bind
+func (b *Broker) QueueDeclareAndBind(exchange, routeKey, queueName string) (string, error) {
+	
+	conn, err := b.GetConnection(ConsumerConnection)
+	if err != nil {
+		return err
+	}
+
+	// user consumer connection and add new channel for this routine
+	ch, err := conn.AddChannel()
+	// check if any errors
+	if err != nil {
+		return err
+	}
+
+	// declare queue
+	q, err := ch.QueueDeclare(
+		queueName, // name
+		true,      // durable
+		false,     // delete when unused
+		// usally when the qeueu exist only between service to broker name is not defined
+		// then it's a exclusive queue
+		(queueName == ""), // exclusive
+		false,             // no-wait
+		nil,               // arguments
+	)
+	// check if any error
+	if err != nil {
+		return "", err
+	}
+
+	// bind queue to echange
+	err = ch.QueueBind(
+		q.Name,   // queue name
+		routeKey, // routing key
+		exchange, // exchange
+		false,    // no-wait
+		nil,      // arguments
+	)
+	// check if any errors
+	if err != nil {
+		return "", err
+	}
+
+	return q.Name, nil
 }

@@ -22,7 +22,7 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 	jsonString, _ := json.Marshal(body)
 
 	// get connection
-	conn, err := e.GetConnection(PublishConnection)
+	conn, err := e.broker.GetConnection(PublishConnection)
 	if err != nil {
 		return err
 	}
