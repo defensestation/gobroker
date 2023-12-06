@@ -49,5 +49,5 @@ func ConsumeMethod(message []byte) {
 	response := make(map[string]string)
 	json.Unmarshal(message, &response)
 
-	fmt.Println("Message Recived:%v", response)
+	fmt.Printf("Message Recived:%v\n", response)
 }
