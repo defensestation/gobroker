@@ -60,14 +60,14 @@ func (b *Broker) QueueDeclareAndBind(exchange, routeKey, queueName string) (stri
 	
 	conn, err := b.GetConnection(ConsumerConnection)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// user consumer connection and add new channel for this routine
 	ch, err := conn.AddChannel()
 	// check if any errors
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// declare queue

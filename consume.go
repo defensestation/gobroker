@@ -3,10 +3,6 @@
 
 package broker
 
-import (
-	amqp "github.com/rabbitmq/amqp091-go"
-)
-
 // only declare and bind
 func (e *Exchange) QueueDeclareAndBind(exchange, routeKey, queueName string, ch *Channel) (string, error) {
 	// declare queue
