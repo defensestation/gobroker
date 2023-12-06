@@ -50,6 +50,7 @@ func NewBroker(endpoint string, opts ...*EndpointOptions) *Broker {
 	return &Broker{
 		Endpoint: endpoint,
 		Type:     "rabbitmq",
+		connections: connections: map[string]*Connection{},
 	}
 }
 

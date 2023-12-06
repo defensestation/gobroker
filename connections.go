@@ -86,7 +86,7 @@ func (e *Broker) AddConnection(ctype string) (*Connection, error) {
 	return e.connections[ctype], nil
 }
 
-func (e *Exchange) GetConnection(ctype string) (*Connection, error) {
+func (e *Broker) GetConnection(ctype string) (*Connection, error) {
 	// check if connection exists
 	if _, ok := e.connections[ctype]; ok {
 		conn := e.connections[ctype]
