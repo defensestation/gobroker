@@ -12,7 +12,6 @@ import (
 type Exchange struct {
 	broker      *Broker
 	name        string
-	connections map[string]*Connection
 }
 
 // exchange options
@@ -38,10 +37,10 @@ func (b *Broker) BuildExchange(name string, opts ...*ExchangeOptions) (*Exchange
 		return nil, errors.New("invalid name")
 	}
 	// create default exchange
-	exchange := &Exchange{broker: b, name: name, connections: map[string]*Connection{}}
+	exchange := &Exchange{broker: b, name: name}
 
 	// setup connections publisher connection
-	publishConn, err := exchange.GetConnection(PublishConnection)
+	publishConn, err := b.GetConnection(PublishConnection)
 	if err != nil {
 		return nil, err
 	}

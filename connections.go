@@ -25,9 +25,9 @@ type Connection struct {
 }
 
 // create tls connection to borker
-func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
+func (e *Broker) AddConnection(ctype string) (*Connection, error) {
 	// create the dial
-	connection, err := amqp.Dial(e.broker.Endpoint)
+	connection, err := amqp.Dial(e.Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 				// wait 1s for reconnect
 				time.Sleep(time.Duration(delay) * time.Second)
 
-				connection, err := amqp.Dial(e.broker.Endpoint)
+				connection, err := amqp.Dial(e.Endpoint)
 				if err == nil {
 					// set connection
 					e.connections[ctype] = &Connection{
@@ -86,7 +86,7 @@ func (e *Exchange) AddConnection(ctype string) (*Connection, error) {
 	return e.connections[ctype], nil
 }
 
-func (e *Exchange) GetConnection(ctype string) (*Connection, error) {
+func (e *Broker) GetConnection(ctype string) (*Connection, error) {
 	// check if connection exists
 	if _, ok := e.connections[ctype]; ok {
 		conn := e.connections[ctype]

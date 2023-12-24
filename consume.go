@@ -3,10 +3,6 @@
 
 package broker
 
-import (
-	amqp "github.com/rabbitmq/amqp091-go"
-)
-
 // only declare and bind
 func (e *Exchange) QueueDeclareAndBind(exchange, routeKey, queueName string, ch *Channel) (string, error) {
 	// declare queue
@@ -44,7 +40,7 @@ func (e *Exchange) QueueDeclareAndBind(exchange, routeKey, queueName string, ch 
 // only one channel is used per go cosumer
 func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte), queueName string) error {
 	// get connection
-	conn, err := e.GetConnection(ConsumerConnection)
+	conn, err := e.broker.GetConnection(ConsumerConnection)
 	if err != nil {
 		return err
 	}
@@ -56,7 +52,7 @@ func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte)
 		return err
 	}
 
-	qName, err := q.QueueDeclareAndBind(exchange, routeKey, queueName, ch)
+	qName, err := e.QueueDeclareAndBind(exchange, routeKey, queueName, ch)
 	if err != nil {
 		return err
 	}
@@ -79,7 +75,7 @@ func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte)
 	// start consumer connection and send every message to functoion
 	go func() {
 		// get the same channel in go routine
-		ch, _ := e.connections[ConsumerConnection].GetChannel(ch.Id)
+		ch, _ := e.broker.connections[ConsumerConnection].GetChannel(ch.Id)
 		for d := range msgs {
 			functions(d.Body)
 		}
