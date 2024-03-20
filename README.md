@@ -20,6 +20,18 @@ newbroker := broker.NewBroker("127.0.0.1", &broker.EndpointOptions{
 					})
 ```
 
+- Publish Message To Exchange 
+```go
+err = newbroker.PublishToExchange(
+		"exchange_name", 
+		"servive.event.type", 			//route key
+		map[string]string{"msg": "test"} 	//message, type: map[string]interface{}
+		)
+if err != nil {
+	...
+}	
+```
+
 - Build Exchange
 ```go
 ex, err := newbroker.BuildExchange("exchange-name")
