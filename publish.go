@@ -40,6 +40,11 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 		return errors.New("invalid routekey")
 	}
 
+	publisOps := &PublishOptions{}
+	if len(opts) == 0 {
+		publisOps = opts[0]
+	}
+
 	// publish message
 	err = ch.Publish(
 		e.name, // exchange
@@ -67,8 +72,6 @@ func validRouteKey(routekey string) bool {
 	return true
 }
 
-
-
 // expose method to publish messages to exchange
 func (b *Broker) PublishToExchange(exchangeName, routekey string, body interface{}, opts ...*PublishOptions) error {
 	// marshal the golang interface to json
@@ -94,6 +97,10 @@ func (b *Broker) PublishToExchange(exchangeName, routekey string, body interface
 		return errors.New("invalid routekey")
 	}
 
+	publisOps := &PublishOptions{}
+	if len(opts) == 0 {
+		publisOps = opts[0]
+	}
 	// publish message
 	err = ch.Publish(
 		exchangeName, // exchange
@@ -109,14 +116,4 @@ func (b *Broker) PublishToExchange(exchangeName, routekey string, body interface
 		return err
 	}
 	return nil
-}
-
-// validate route key for format: servicename.event/log/*.*
-// validate key must altest 3 parts
-func validRouteKey(routekey string) bool {
-	arr := strings.Split(routekey, ".")
-	if len(arr) < 3 {
-		return false
-	}
-	return true
 }
