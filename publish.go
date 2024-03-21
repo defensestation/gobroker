@@ -41,7 +41,7 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 	}
 
 	publisOps := &PublishOptions{}
-	if len(opts) == 0 {
+	if len(opts) != 0 {
 		publisOps = opts[0]
 	}
 
@@ -98,7 +98,7 @@ func (b *Broker) PublishToExchange(exchangeName, routekey string, body interface
 	}
 
 	publisOps := &PublishOptions{}
-	if len(opts) == 0 {
+	if len(opts) != 0 {
 		publisOps = opts[0]
 	}
 	// publish message
