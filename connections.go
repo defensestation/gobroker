@@ -46,6 +46,12 @@ func (e *Broker) AddConnection(ctype string) (*Connection, error) {
 		// Listen to NotifyClose
 		for {
 			reason, ok := <-connection.NotifyClose(make(chan *amqp.Error))
+			if reason == nil {
+				reason = &amqp.Error{
+					Code: 1337,
+					Reason: "Unknown: got the notifyclose reason as nil"
+				}
+			}
 			// reset channels and set channel status to dead
 			e.connections[ctype] = &Connection{
 				Status:      reason.Reason,

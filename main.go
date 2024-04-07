@@ -101,3 +101,5 @@ func (b *Broker) QueueDeclareAndBind(exchange, routeKey, queueName string) (stri
 
 	return q.Name, nil
 }
+
+
