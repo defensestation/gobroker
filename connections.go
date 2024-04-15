@@ -49,7 +49,7 @@ func (e *Broker) AddConnection(ctype string) (*Connection, error) {
 			if reason == nil {
 				reason = &amqp.Error{
 					Code: 1337,
-					Reason: "Unknown: got the notifyclose reason as nil"
+					Reason: "Unknown: got the notifyclose reason as nil",
 				}
 			}
 			// reset channels and set channel status to dead
