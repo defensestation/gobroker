@@ -148,7 +148,7 @@ func (b *Broker) RunConsumer(exchange, routeKey string, functions func([]byte), 
 
 	// build consumer
 	msgs, err := ch.Consume(
-		qName, // queue
+		queueName, // queue
 		"",     // consumer
 		true,   // auto ack
 		false,  // exclusive
