@@ -102,4 +102,51 @@ func (b *Broker) QueueDeclareAndBind(exchange, routeKey, queueName string) (stri
 	return q.Name, nil
 }
 
+// only one channel is used per go cosumer
+func (b *Broker) RunConsumer(exchange, routeKey string, functions func([]byte), queueName string) error {
+	// get connection
+	conn, err := b.GetConnection(ConsumerConnection)
+	if err != nil {
+		return err
+	}
 
+	// user consumer connection and add new channel for this routine
+	ch, err := conn.AddChannel()
+	// check if any errors
+	if err != nil {
+		return err
+	}
+
+	qName, err := b.QueueDeclareAndBind(exchange, routeKey, queueName, ch)
+	if err != nil {
+		return err
+	}
+
+	// build consumer
+	msgs, err := ch.Consume(
+		qName, // queue
+		"",     // consumer
+		true,   // auto ack
+		false,  // exclusive
+		false,  // no local
+		false,  // no wait
+		nil,    // args
+	)
+	// check if any errors
+	if err != nil {
+		return err
+	}
+
+	// start consumer connection and send every message to functoion
+	go func() {
+		// get the same channel in go routine
+		ch, _ := b.connections[ConsumerConnection].GetChannel(ch.Id)
+		for d := range msgs {
+			functions(d.Body)
+		}
+		// close the channel with go routine ends
+		defer ch.Close()
+	}()
+
+	return nil
+}
