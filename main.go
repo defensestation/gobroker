@@ -117,7 +117,31 @@ func (b *Broker) RunConsumer(exchange, routeKey string, functions func([]byte), 
 		return err
 	}
 
-	qName, err := b.QueueDeclareAndBind(exchange, routeKey, queueName, ch)
+	// declare queue
+	q, err := ch.QueueDeclare(
+		queueName, // name
+		true,      // durable
+		false,     // delete when unused
+		// usally when the qeueu exist only between service to broker name is not defined
+		// then it's a exclusive queue
+		(queueName == ""), // exclusive
+		false,             // no-wait
+		nil,               // arguments
+	)
+	// check if any error
+	if err != nil {
+		return err
+	}
+
+	// bind queue to echange
+	err = ch.QueueBind(
+		q.Name,   // queue name
+		routeKey, // routing key
+		exchange, // exchange
+		false,    // no-wait
+		nil,      // arguments
+	)
+	// check if any errors
 	if err != nil {
 		return err
 	}
