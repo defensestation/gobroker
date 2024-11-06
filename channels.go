@@ -90,6 +90,9 @@ func (c *Connection) GetChannel(id ...int) (*Channel, error) {
 		_, ok := c.ChannelPool[id[0]]
 		if ok {
 			ch := c.ChannelPool[id[0]]
+			if ch == nil {
+				return nil, errors.New("unable to find channel")
+			}
 			if ch.Status != "live" {
 				return nil, errors.New("channel status not live")
 			}
@@ -108,7 +111,9 @@ func (c *Connection) GetChannel(id ...int) (*Channel, error) {
 
 	// get channel
 	ch := c.ChannelPool[c.pickCounter]
-
+	if ch == nil {
+		return nil, errors.New("unable to find channel")
+	}
 	// check channel status
 	if ch.Status != "live" {
 		return ch, errors.New("channel status not live")
