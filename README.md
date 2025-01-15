@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/defensestation/gobroker.svg)](https://pkg.go.dev/github.com/defensestation/gobroker)
+
 # Golang Broker Package
 
 This package provides an abstraction layer on top of brokers like RabbitMQ, AmazonMQ and make publishing and consuming messages easier while following best practices. Main use-case for this package is micro-service architecture.
