@@ -1,7 +1,7 @@
 // version: 0.0.1
 // broker wrapper is lib to manage creation of exchanges and consumers
 // only type supported is rabbitmq
-package broker
+package gobroker
 
 import (
 	"fmt"

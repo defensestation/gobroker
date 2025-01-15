@@ -1,7 +1,7 @@
 // version: 0.0.1
 // file to run consumers
 
-package broker
+package gobroker
 
 // only declare and bind
 func (e *Exchange) QueueDeclareAndBind(exchange, routeKey, queueName string, ch *Channel) (string, error) {

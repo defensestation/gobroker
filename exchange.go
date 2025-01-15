@@ -1,6 +1,6 @@
 // version: 0.0.1
 // file to build exchange
-package broker
+package gobroker
 
 import (
 	errors "errors"
