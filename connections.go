@@ -6,9 +6,6 @@ import (
 	errors "errors"
 	log "log"
 	time "time"
-	net "net"
-	fmt "fmt"
-	context "context"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -27,27 +24,10 @@ type Connection struct {
 	pickCounter int
 }
 
-func resolveAndDial(endpoint string) (*amqp.Connection, error) {
-	// Resolve the hostname manually
-	resolver := net.Resolver{}
-	ips, err := resolver.LookupHost(context.Background(), endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve hostname %s: %v", endpoint, err)
-	}
-	if len(ips) == 0 {
-		return nil, fmt.Errorf("no IPs found for hostname %s", endpoint)
-	}
-
-	// Use the first IP for connection
-	dialEndpoint := fmt.Sprintf("amqps://%s", ips[0])
-	log.Printf("Resolved %s to %s, dialing...", endpoint, dialEndpoint)
-	return amqp.Dial(dialEndpoint)
-}
-
 // create tls connection to borker
 func (e *Broker) AddConnection(ctype string) (*Connection, error) {
 	// create the dial
-	connection, err := resolveAndDial(e.Endpoint)
+	connection, err := amqp.Dial(e.Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +71,7 @@ func (e *Broker) AddConnection(ctype string) (*Connection, error) {
 				// wait 1s for reconnect
 				time.Sleep(time.Duration(delay) * time.Second)
 
-				resolveAndDial(e.Endpoint)
+				connection, err := amqp.Dial(e.Endpoint)
 				if err == nil {
 					// set connection
 					e.connections[ctype] = &Connection{
