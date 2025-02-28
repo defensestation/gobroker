@@ -16,13 +16,13 @@ GoBroker is a unified messaging broker library for Go that provides a consistent
 ## Installation
 
 ```bash
-go get github.com/defensestation/gobroker
+go isntall github.com/defensestation/gobroker@v2
 ```
 
 ## Dependencies
 
 - [amqp091-go](https://github.com/rabbitmq/amqp091-go): RabbitMQ client
-- [go-redis/redis/v8](https://github.com/go-redis/redis): Redis client
+- [redis/go-redis/v9](https://github.com/redis/go-redis/v9): Redis client
 - [go-stomp/stomp/v3](https://github.com/go-stomp/stomp): STOMP client for Amazon MQ
 
 
