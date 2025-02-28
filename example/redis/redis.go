@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/defensestation/gobroker"
+	"github.com/defensestation/gobroker/v2"
 	"log"
 	"time"
 )

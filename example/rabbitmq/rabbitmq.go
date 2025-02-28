@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/defensestation/gobroker"
+	"github.com/defensestation/gobroker/v2"
 )
 
 var (

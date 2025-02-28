@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/defensestation/gobroker"
+	"github.com/defensestation/gobroker/v2"
 )
 
 func main() {
