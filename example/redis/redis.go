@@ -34,13 +34,6 @@ func main() {
 		},
 	}
 
-	// Example of using the unified API
-	// To Redis
-	err := redisBroker.Publish(context.TODO(),"user:events", event)
-	if err != nil {
-		log.Printf("Failed to publish to Redis: %v", err)
-	}
-
 	// From Redis
 	err = redisBroker.Subscribe("user:events", func(data []byte) {
 		fmt.Printf("Received Redis message: %s\n", string(data))
@@ -48,6 +41,13 @@ func main() {
 	
 	if err != nil {
 		log.Printf("Failed to subscribe to Redis: %v", err)
+	}
+
+	// Example of using the unified API
+	// To Redis
+	err := redisBroker.Publish(context.TODO(),"user:events", event)
+	if err != nil {
+		log.Printf("Failed to publish to Redis: %v", err)
 	}
 	
 	// Keep the program running to receive messages

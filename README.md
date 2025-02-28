@@ -25,13 +25,6 @@ go get github.com/yourusername/gobroker
 - [go-redis/redis/v8](https://github.com/go-redis/redis): Redis client
 - [go-stomp/stomp/v3](https://github.com/go-stomp/stomp): STOMP client for Amazon MQ
 
-Install dependencies with:
-
-```bash
-go get github.com/rabbitmq/amqp091-go
-go get github.com/go-redis/redis/v8
-go get github.com/go-stomp/stomp/v3
-```
 
 ## Quick Start
 
@@ -188,6 +181,11 @@ GoBroker was designed with the following principles in mind:
 3. **Resilience**: Robust error handling and automatic reconnection
 4. **Performance**: Efficient connection and channel management
 5. **Extensibility**: Easy to add support for additional broker types
+
+## WARNING
+```
+AmazonMQ has not been tested yet.
+```
 
 ## Contributing
 
