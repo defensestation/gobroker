@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -48,7 +49,7 @@ func main() {
 	}
 
 	// Publish a message
-	err = broker.Publish("/queue/user-events", event)
+	err = broker.Publish(context.TODO(), "/queue/user-events", event)
 	if err != nil {
 		log.Fatalf("Failed to publish: %v", err)
 	}
@@ -71,7 +72,7 @@ func main() {
 		"severity": "info",
 	}
 	
-	err = broker.Publish("/topic/notifications", notification)
+	err = broker.Publish(context.TODO(),"/topic/notifications", notification)
 	if err != nil {
 		log.Fatalf("Failed to publish notification: %v", err)
 	}

@@ -4,7 +4,9 @@
 package gobroker
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -106,7 +108,7 @@ func NewBroker(endpoint string, brokerType string, opts ...*EndpointOptions) *Br
 }
 
 // Extended unified publish method
-func (b *Broker) Publish(topic string, body interface{}) error {
+func (b *Broker) Publish(ctx context.Context, topic string, body interface{}) error {
 	switch b.Type {
 	case BrokerTypeRabbitMQ:
 		// For RabbitMQ, topic should be in format "exchange.routekey"
@@ -115,7 +117,7 @@ func (b *Broker) Publish(topic string, body interface{}) error {
 			return fmt.Errorf("invalid topic format for RabbitMQ, should be 'exchange.routekey'")
 		}
 		exchange, routeKey := parts[0], parts[1]
-		return b.PublishToExchange(exchange, routeKey, body)
+		return b.PublishToExchange(ctx, exchange, routeKey, body)
 		
 	case BrokerTypeRedis:
 		// For Redis, topic is the channel name
@@ -176,7 +178,11 @@ func (b *Broker) Close() {
 			}
 		case *AmazonMQConnection:
 			if c.Conn != nil {
-				c.Conn.Disconnect()
+				err := c.Conn.Disconnect()
+				if err != nil {
+					log.Printf("failed to close *AmazonMQConnection connection")
+					return
+				}
 			}
 		}
 	}

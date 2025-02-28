@@ -3,6 +3,10 @@
 
 package gobroker
 
+import (
+	"log"
+)
+
 // only declare and bind
 func (e *Exchange) QueueDeclareAndBind(exchange, routeKey, queueName string, ch *Channel) (string, error) {
 	// declare queue
@@ -74,13 +78,23 @@ func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte)
 
 	// start consumer connection and send every message to functoion
 	go func() {
-		// get the same channel in go routine
-		ch, _ := e.broker.connections[ConsumerConnection].GetChannel(ch.Id)
-		for d := range msgs {
-			functions(d.Body)
-		}
-		// close the channel with go routine ends
-		defer ch.Close()
+	    rawConn := e.broker.connections[ConsumerConnection]
+	    conn, ok := rawConn.(*Connection)
+	    if !ok {
+	        log.Printf("failed to convert to *Connection") // log
+	        return                                       // exit goroutine
+	    }
+
+	    ch, err := conn.GetChannel(ch.Id)
+	    if err != nil {
+	        log.Printf("failed to get channel: %v", err) // log
+	        return
+	    }
+
+	    defer ch.Close() // ensure close even on error
+	    for d := range msgs {
+	        functions(d.Body)
+	    }
 	}()
 
 	return nil

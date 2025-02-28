@@ -1,323 +1,317 @@
-// amazonmq.go
+// amazon_mq.go
 // Implementation of Amazon MQ for gobroker (using STOMP protocol)
+
 package gobroker
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"log"
-	"time"
-
-	"github.com/go-stomp/stomp/v3"
+    "encoding/json"
+    "errors"
+    "fmt"
+    "github.com/go-stomp/stomp/v3"
+    "github.com/go-stomp/stomp/v3/frame"
+    "log"
+    "time"
 )
 
-// Amazon MQ connection types
 var (
-	AmazonMQPublishConnection  = "amazonmq_publish"
-	AmazonMQConsumerConnection = "amazonmq_consume"
+    AmazonMQPublishConnection  = "amazonmq_publish"
+    AmazonMQConsumerConnection = "amazonmq_consume"
 )
-
-// AmazonMQConnection struct to maintain compatibility with Connection interface
+// AmazonMQConnection struct
 type AmazonMQConnection struct {
-	*stomp.Conn
-	Status      string
-	Type        string
-	ChannelPool map[int]*AmazonMQChannel
-	pickCounter int
-	Options     *stomp.ConnOptions
-	Address     string
+    // The underlying STOMP connection
+    Conn        *stomp.Conn
+    Status      string
+    Type        string
+    ChannelPool map[int]*AmazonMQChannel
+    pickCounter int
+
+    // We'll just store the address or any needed info here
+    Address string
+    // If you want to store the original stomp options:
+    Options []func(*stomp.Conn) error
 }
 
-// AmazonMQChannel struct to maintain compatibility with Channel interface
+// AmazonMQChannel struct
 type AmazonMQChannel struct {
-	Conn   *stomp.Conn
-	Status string
-	Id     int
-	Sub    *stomp.Subscription // For subscription channels
+    Conn   *stomp.Conn
+    Status string
+    Id     int
+
+    // Subscription reference, if this channel is used by a consumer
+    Sub *stomp.Subscription
 }
 
-// AmazonMQ-specific options
-type AmazonMQOptions struct {
-	HeartBeat time.Duration
-	Protocol  string // Supports "stomp", default is "stomp" (others could be added like "amqp")
-}
 
-// Add AmazonMQ connection to broker
+// AddAmazonMQConnection: create a new STOMP connection and attach it to Broker
 func (e *Broker) AddAmazonMQConnection(ctype string) (*AmazonMQConnection, error) {
-	// Parse options from endpoint - assuming format "username:password@host:port"
-	// Extract username, password, host, port
-	username, password, address, err := parseAmazonMQEndpoint(e.Endpoint)
-	if err != nil {
-		return nil, err
-	}
+    username, password, address, err := parseAmazonMQEndpoint(e.Endpoint)
+    if err != nil {
+        return nil, err
+    }
 
-	// Set connection options
-	options := &stomp.ConnOptions{
-		Login:    username,
-		Passcode: password,
-		// Default heartbeat
-		HeartBeat: time.Second * 30,
-	}
+    // Build the stomp options you want
+    options := []func(*stomp.Conn) error{
+        stomp.ConnOpt.Login(username, password),
+        // Example: 30s heartbeat each way
+        stomp.ConnOpt.HeartBeat(30*time.Second, 30*time.Second),
+        // Add more if needed
+    }
 
-	// Create STOMP connection
-	conn, err := stomp.Dial("tcp", address, options)
-	if err != nil {
-		return nil, err
-	}
+    // Create STOMP connection
+    conn, err := stomp.Dial("tcp", address, options...)
+    if err != nil {
+        return nil, err
+    }
 
-	// Create connection
-	connection := &AmazonMQConnection{
-		Conn:        conn,
-		Status:      "live",
-		Type:        ctype,
-		ChannelPool: map[int]*AmazonMQChannel{},
-		pickCounter: 1,
-		Options:     options,
-		Address:     address,
-	}
+    connection := &AmazonMQConnection{
+        Conn:        conn,
+        Status:      "live",
+        Type:        ctype,
+        ChannelPool: make(map[int]*AmazonMQChannel),
+        pickCounter: 1,
+        Address:     address,
+        Options:     options, // we can store these if we want to reuse them for reconnection
+    }
 
-	// Store connection
-	e.connections[ctype] = connection
+    if e.connections == nil {
+        e.connections = make(map[string]interface{})
+    }
+    e.connections[ctype] = connection
 
-	// Fixed health check goroutine for AmazonMQ
-	go func() {
-	    ticker := time.NewTicker(30 * time.Second)
-	    defer ticker.Stop()
+    // Health-check / reconnection goroutine
+    go func() {
+        ticker := time.NewTicker(30 * time.Second)
+        defer ticker.Stop()
 
-	    for {
-	        select {
-	        case <-ticker.C:
-	            // Check if connection is still alive by sending a heartbeat
-	            if connection.Conn == nil || !connection.Conn.Connected() {
-	                connection.Status = "connection error"
-	                log.Printf("Amazon MQ connection error")
+        for {
+            <-ticker.C
 
-	                // Attempt to reconnect
-	                for {
-	                    reconnectDelay := time.Duration(delay) * time.Second // Using 5 seconds as default delay
-	                    time.Sleep(reconnectDelay)
-	                    
-	                    newConn, err := stomp.Dial("tcp", address, options)
-	                    if err == nil {
-	                        connection.Conn = newConn
-	                        connection.Status = "live"
-	                        log.Printf("Amazon MQ connection re-established")
-	                        break
-	                    }
+            // If connection or a "ping" fails, attempt reconnect
+            if conn == nil {
+                connection.Status = "connection error"
+                log.Printf("Amazon MQ connection is nil, attempting reconnect")
+                reconnectAmazonMQConnection(connection)
+                continue
+            }
 
-	                    log.Printf("Amazon MQ reconnect failed: %v", err)
-	                }
-	            }
-	        }
-	    }
-	}()
+            // "Ping" test
+            pingErr := conn.Send("/ping", "text/plain", []byte("ping"))
+            if pingErr != nil {
+                connection.Status = "connection error"
+                log.Printf("Amazon MQ connection error: %v", pingErr)
+                reconnectAmazonMQConnection(connection)
+            }
+        }
+    }()
 
-	return connection, nil
+    return connection, nil
 }
 
-// Helper to parse Amazon MQ endpoint
+// Helper to handle reconnection attempts
+func reconnectAmazonMQConnection(conn *AmazonMQConnection) {
+    for {
+        time.Sleep(time.Duration(delay) * time.Second)
+
+        newConn, err := stomp.Dial("tcp", conn.Address, conn.Options...)
+        if err == nil {
+            conn.Conn = newConn
+            conn.Status = "live"
+            log.Printf("Amazon MQ connection re-established to %s", conn.Address)
+            return
+        }
+
+        log.Printf("Amazon MQ reconnect failed: %v", err)
+    }
+}
+
+// parseAmazonMQEndpoint: simplistic parser for "username:password@host:port"
 func parseAmazonMQEndpoint(endpoint string) (username, password, address string, err error) {
-	// Simple parsing - you might want to use a URL parser in production
-	// Format: username:password@host:port
-	var host, port string
-	
-	// Extract auth info
-	_, err = fmt.Sscanf(endpoint, "%s:%s@%s:%s", &username, &password, &host, &port)
-	if err != nil {
-		return "", "", "", errors.New("invalid Amazon MQ endpoint format, should be username:password@host:port")
-	}
-	
-	address = fmt.Sprintf("%s:%s", host, port)
-	return username, password, address, nil
+    var host, port string
+    _, err = fmt.Sscanf(endpoint, "%s:%s@%s:%s", &username, &password, &host, &port)
+    if err != nil {
+        return "", "", "", errors.New("invalid Amazon MQ endpoint format, should be username:password@host:port")
+    }
+
+    address = fmt.Sprintf("%s:%s", host, port)
+    return username, password, address, nil
 }
 
-// Get AmazonMQ connection
+// GetAmazonMQConnection: retrieves an existing connection or creates one if needed
 func (e *Broker) GetAmazonMQConnection(ctype string) (*AmazonMQConnection, error) {
-	// Check if connection exists
-	if _, ok := e.connections[ctype]; ok {
-		conn, ok := e.connections[ctype].(*AmazonMQConnection)
-		if !ok {
-			return nil, errors.New("connection is not an Amazon MQ connection")
-		}
-		if conn.Status != "live" {
-			return nil, errors.New("connection status not live")
-		}
-		return conn, nil
-	}
-	return e.AddAmazonMQConnection(ctype)
+    if e.connections == nil {
+        e.connections = make(map[string]interface{})
+    }
+
+    if raw, ok := e.connections[ctype]; ok {
+        if conn, ok := raw.(*AmazonMQConnection); ok {
+            if conn.Status != "live" {
+                return nil, errors.New("connection status not live")
+            }
+            return conn, nil
+        }
+        return nil, errors.New("connection is not an Amazon MQ connection")
+    }
+
+    // Not found, create a new one
+    return e.AddAmazonMQConnection(ctype)
 }
 
-// Add AmazonMQ channel
+// AddAmazonMQChannel
 func (c *AmazonMQConnection) AddAmazonMQChannel() (*AmazonMQChannel, error) {
-	// Check connection status
-	if c.Status != "live" {
-		return nil, errors.New("connection not live")
-	}
+    if c.Status != "live" {
+        return nil, errors.New("connection not live")
+    }
 
-	// Pool length
-	poolLength := len(c.ChannelPool)
-	channelId := poolLength + 1
+    channelId := len(c.ChannelPool) + 1
+    channel := &AmazonMQChannel{
+        Conn:   c.Conn,
+        Status: "live",
+        Id:     channelId,
+        Sub:    nil,
+    }
 
-	// Create channel
-	channel := &AmazonMQChannel{
-		Conn:   c.Conn,
-		Status: "live",
-		Id:     channelId,
-	}
-
-	// Add to pool
-	c.ChannelPool[channelId] = channel
-
-	return channel, nil
+    c.ChannelPool[channelId] = channel
+    return channel, nil
 }
 
-// Get AmazonMQ channel
+// GetAmazonMQChannel
 func (c *AmazonMQConnection) GetAmazonMQChannel(id ...int) (*AmazonMQChannel, error) {
-	// If id is provided return channel by that id
-	if len(id) != 0 {
-		_, ok := c.ChannelPool[id[0]]
-		if ok {
-			ch := c.ChannelPool[id[0]]
-			if ch == nil {
-				return nil, errors.New("unable to find channel")
-			}
-			if ch.Status != "live" {
-				return nil, errors.New("channel status not live")
-			}
-			return ch, nil
-		}
-		return nil, errors.New("invalid id")
-	}
+    if len(id) > 0 {
+        ch, ok := c.ChannelPool[id[0]]
+        if !ok || ch == nil {
+            return nil, errors.New("unable to find channel")
+        }
+        if ch.Status != "live" {
+            return nil, errors.New("channel status not live")
+        }
+        return ch, nil
+    }
 
-	// Get pool length
-	poolLength := len(c.ChannelPool)
+    // Round-robin selection if no ID is given
+    poolSize := len(c.ChannelPool)
+    if poolSize == 0 {
+        return c.AddAmazonMQChannel()
+    }
 
-	// Check if pool has any channels if not create and return
-	if poolLength == 0 {
-		return c.AddAmazonMQChannel()
-	}
+    ch, ok := c.ChannelPool[c.pickCounter]
+    if !ok || ch == nil {
+        return nil, errors.New("unable to find channel")
+    }
+    if ch.Status != "live" {
+        return nil, errors.New("channel status not live")
+    }
 
-	// Get channel
-	ch := c.ChannelPool[c.pickCounter]
-	if ch == nil {
-		return nil, errors.New("unable to find channel")
-	}
-	
-	// Check channel status
-	if ch.Status != "live" {
-		return nil, errors.New("channel status not live")
-	}
-
-	// Update pickcounter
-	c.pickCounter = (c.pickCounter % poolLength) + 1
-
-	return ch, nil
+    c.pickCounter = (c.pickCounter % poolSize) + 1
+    return ch, nil
 }
 
-// Publish message to Amazon MQ
+// PublishToAmazonMQQueue publishes a message (JSON-encoded) to a STOMP destination
 func (b *Broker) PublishToAmazonMQQueue(destination string, body interface{}) error {
-	// Get Amazon MQ publish connection
-	conn, err := b.GetAmazonMQConnection(AmazonMQPublishConnection)
-	if err != nil {
-		return err
-	}
+    // Acquire the publish connection
+    conn, err := b.GetAmazonMQConnection(AmazonMQPublishConnection)
+    if err != nil {
+        return err
+    }
 
-	// Get channel
-	ch, err := conn.GetAmazonMQChannel()
-	if err != nil {
-		return err
-	}
+    // Acquire a channel
+    ch, err := conn.GetAmazonMQChannel()
+    if err != nil {
+        return err
+    }
 
-	// Marshal the golang interface to json
-	jsonString, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
+    // Encode as JSON
+    payload, err := json.Marshal(body)
+    if err != nil {
+        return err
+    }
 
-	// Set message options
-	opts := &stomp.SendOptions{
-		ContentType: "application/json",
-	}
+    // Provide optional headers (e.g., content-type)
+    headers := []func(*frame.Frame) error{
+        stomp.SendOpt.Header("content-type", "application/json"),
+        // Additional headers if needed
+    }
 
-	// Publish message
-	err = ch.Conn.Send(destination, "application/json", jsonString, opts)
-	if err != nil {
-		return err
-	}
-
-	return nil
+    // Send the message
+    return ch.Conn.Send(destination, "application/json", payload, headers...)
 }
 
-// Run Amazon MQ consumer
+// RunAmazonMQConsumer subscribes to a STOMP destination and processes messages
 func (b *Broker) RunAmazonMQConsumer(destination string, handler func([]byte)) error {
-	// Get Amazon MQ consumer connection
-	conn, err := b.GetAmazonMQConnection(AmazonMQConsumerConnection)
-	if err != nil {
-		return err
-	}
+    // Acquire the consumer connection
+    conn, err := b.GetAmazonMQConnection(AmazonMQConsumerConnection)
+    if err != nil {
+        return err
+    }
 
-	// Create a new Amazon MQ channel
-	ch, err := conn.GetAmazonMQChannel()
-	if err != nil {
-		return err
-	}
+    // Acquire a channel
+    ch, err := conn.GetAmazonMQChannel()
+    if err != nil {
+        return err
+    }
 
-	// Set subscription options
-	opts := &stomp.SubscribeOptions{
-		Ack: stomp.AckAuto, // Auto acknowledge messages
-	}
+    // Subscription options (headers), if any
+    subOpts := []func(*frame.Frame) error{
+        // For example: stomp.SubscribeOpt.Header("selector", "some-value"),
+    }
 
-	// Create subscription
-	sub, err := ch.Conn.Subscribe(destination, stomp.AckAuto, opts)
-	if err != nil {
-		return err
-	}
-	ch.Sub = sub
+    // Subscribe with an AckMode (e.g., AckAuto)
+    sub, err := ch.Conn.Subscribe(destination, stomp.AckAuto, subOpts...)
+    if err != nil {
+        return err
+    }
+    ch.Sub = sub
 
-	// Start consumer goroutine
-	go func() {
-		for {
-			msg := <-sub.C
-			if msg == nil {
-				log.Printf("Amazon MQ subscription channel closed")
-				ch.Status = "error"
-				
-				// Try to resubscribe
-				time.Sleep(time.Duration(delay) * time.Second)
-				
-				// Check if we need to reconnect
-				if !conn.Conn.Connected() {
-					// Wait for the reconnection logic to handle reconnecting
-					for conn.Status != "live" {
-						time.Sleep(time.Second)
-					}
-				}
-				
-				newSub, err := conn.Conn.Subscribe(destination, stomp.AckAuto, opts)
-				if err != nil {
-					log.Printf("Failed to resubscribe: %v", err)
-					continue
-				}
-				
-				ch.Sub = newSub
-				ch.Status = "live"
-				sub = newSub
-				continue
-			}
-			
-			// Process message
-			handler(msg.Body)
-		}
-	}()
+    // Start a consumer loop
+    go func() {
+        for {
+            msg := <-sub.C
+            if msg == nil {
+                log.Printf("Amazon MQ subscription channel closed.")
+                ch.Status = "error"
 
-	return nil
+                // Attempt to re-subscribe after a delay
+                time.Sleep(time.Duration(delay) * time.Second)
+
+                // Quick check: if the entire connection is down, wait for reconnection
+                pingErr := conn.Conn.Send("/ping", "text/plain", []byte("ping"))
+                if pingErr != nil {
+                    // Wait until the health-check goroutine reconnects
+                    for conn.Status != "live" {
+                        time.Sleep(time.Second)
+                    }
+                }
+
+                // Try again
+                newSub, err := conn.Conn.Subscribe(destination, stomp.AckAuto, subOpts...)
+                if err != nil {
+                    log.Printf("Failed to resubscribe: %v", err)
+                    continue
+                }
+
+                ch.Sub = newSub
+                ch.Status = "live"
+                sub = newSub
+                continue
+            }
+
+            if msg.Err != nil {
+                log.Printf("Amazon MQ message error: %v", msg.Err)
+                continue
+            }
+
+            // Normal message => run your handler
+            handler(msg.Body)
+        }
+    }()
+
+    return nil
 }
 
-// Close AmazonMQ channel
+// Close an AmazonMQChannel
 func (ch *AmazonMQChannel) Close() error {
-	if ch.Sub != nil {
-		return ch.Sub.Unsubscribe()
-	}
-	return nil
+    if ch.Sub != nil {
+        return ch.Sub.Unsubscribe()
+    }
+    return nil
 }

@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
-
 	"github.com/defensestation/gobroker"
 )
 
@@ -18,9 +18,25 @@ func main() {
 	})
 	defer redisBroker.Close()
 
+	// Example message
+	event := map[string]interface{}{
+		"id":          12345,
+		"type":        "user_registered",
+		"username":    "johndoe",
+		"email":       "john@example.com",
+		"created_at":  time.Now().Format(time.RFC3339),
+		"source":      "web_app",
+		"ip_address":  "192.168.1.1",
+		"user_agent":  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+		"metadata": map[string]interface{}{
+			"referrer": "google.com",
+			"plan":     "premium",
+		},
+	}
+
 	// Example of using the unified API
 	// To Redis
-	err = redisBroker.Publish("user:events", userEvent)
+	err := redisBroker.Publish(context.TODO(),"user:events", event)
 	if err != nil {
 		log.Printf("Failed to publish to Redis: %v", err)
 	}

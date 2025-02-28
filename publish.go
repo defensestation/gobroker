@@ -3,6 +3,7 @@
 package gobroker
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -16,7 +17,7 @@ type PublishOptions struct {
 }
 
 // expose method to publish messages to exchange
-func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOptions) error {
+func (e *Exchange) Publish(ctx context.Context, routekey string, body interface{}, opts ...*PublishOptions) error {
 	// marshal the golang interface to json
 	jsonString, _ := json.Marshal(body)
 
@@ -46,7 +47,8 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 	}
 
 	// publish message
-	err = ch.Publish(
+	err = ch.PublishWithContext(
+		ctx,
 		e.name, // exchange
 		routekey,            // routing key
 		publisOps.Mandatory, // mandatory
@@ -66,14 +68,11 @@ func (e *Exchange) Publish(routekey string, body interface{}, opts ...*PublishOp
 // validate key must altest 3 parts
 func validRouteKey(routekey string) bool {
 	arr := strings.Split(routekey, ".")
-	if len(arr) < 3 {
-		return false
-	}
-	return true
+	return len(arr) >= 3
 }
 
 // expose method to publish messages to exchange
-func (b *Broker) PublishToExchange(exchangeName, routekey string, body interface{}, opts ...*PublishOptions) error {
+func (b *Broker) PublishToExchange(ctx context.Context, exchangeName, routekey string, body interface{}, opts ...*PublishOptions) error {
 	// marshal the golang interface to json
 	jsonString, _ := json.Marshal(body)
 
@@ -102,7 +101,8 @@ func (b *Broker) PublishToExchange(exchangeName, routekey string, body interface
 		publisOps = opts[0]
 	}
 	// publish message
-	err = ch.Publish(
+	err = ch.PublishWithContext(
+		ctx,
 		exchangeName, // exchange
 		routekey,            // routing key
 		publisOps.Mandatory, // mandatory

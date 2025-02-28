@@ -6,11 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 // Redis connection types
@@ -76,43 +75,41 @@ func (e *Broker) AddRedisConnection(ctype string) (*RedisConnection, error) {
 
 	// Start health check goroutine
 	go func() {
-		ticker := time.NewTicker(30 * time.Second)
-		defer ticker.Stop()
+	    ticker := time.NewTicker(30 * time.Second)
+	    defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				_, err := client.Ping(ctx).Result()
-				cancel()
+	    for range ticker.C {
+	        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	        _, err := client.Ping(ctx).Result()
+	        cancel()
 
-				if err != nil {
-					connection.Status = "connection error"
-					log.Printf("Redis connection error: %v", err)
+	        if err != nil {
+	            connection.Status = "connection error"
+	            log.Printf("Redis connection error: %v", err)
 
-					// Attempt to reconnect
-					for {
-						time.Sleep(time.Duration(delay) * time.Second)
-						
-						newClient := redis.NewClient(opts)
-						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-						_, err := newClient.Ping(ctx).Result()
-						cancel()
+	            // Attempt to reconnect
+	            for {
+	                time.Sleep(time.Duration(delay) * time.Second)
+	                
+	                newClient := redis.NewClient(opts)
+	                ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	                _, err := newClient.Ping(ctx).Result()
+	                cancel()
 
-						if err == nil {
-							connection.Client = newClient
-							connection.Status = "live"
-							log.Printf("Redis connection re-established")
-							break
-						}
+	                if err == nil {
+	                    connection.Client = newClient
+	                    connection.Status = "live"
+	                    log.Printf("Redis connection re-established")
+	                    break
+	                }
 
-						log.Printf("Redis reconnect failed: %v", err)
-						newClient.Close()
-					}
-				}
-			}
-		}
+	                log.Printf("Redis reconnect failed: %v", err)
+	                newClient.Close()
+	            }
+	        }
+	    }
 	}()
+
 
 	return connection, nil
 }

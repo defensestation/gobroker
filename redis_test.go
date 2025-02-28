@@ -1,15 +1,14 @@
-package gobroker_test
+package gobroker
 
 import (
-	"context"
+	// "context"
 	"encoding/json"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v8"
-	"github.com/yourpackage/gobroker"
+	// "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,9 +26,7 @@ func TestRedisIntegration(t *testing.T) {
 	}
 
 	// Create broker
-	broker := gobroker.New(gobroker.Config{
-		Endpoint: redisEndpoint,
-	})
+	broker := NewBroker(redisEndpoint,BrokerTypeRedis)
 
 	// Test cases
 	t.Run("TestRedisConnection", testRedisConnection(broker))
@@ -39,21 +36,21 @@ func TestRedisIntegration(t *testing.T) {
 	t.Run("TestRedisReconnection", testRedisReconnection(broker))
 }
 
-func testRedisConnection(broker *gobroker.Broker) func(t *testing.T) {
+func testRedisConnection(broker *Broker) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Test publish connection
-		pubConn, err := broker.GetRedisConnection(gobroker.RedisPublishConnection)
+		pubConn, err := broker.GetRedisConnection(RedisPublishConnection)
 		assert.NoError(t, err)
 		assert.NotNil(t, pubConn)
 		assert.Equal(t, "live", pubConn.Status)
-		assert.Equal(t, gobroker.RedisPublishConnection, pubConn.Type)
+		assert.Equal(t, RedisPublishConnection, pubConn.Type)
 
 		// Test consumer connection
-		consConn, err := broker.GetRedisConnection(gobroker.RedisConsumerConnection)
+		consConn, err := broker.GetRedisConnection(RedisConsumerConnection)
 		assert.NoError(t, err)
 		assert.NotNil(t, consConn)
 		assert.Equal(t, "live", consConn.Status)
-		assert.Equal(t, gobroker.RedisConsumerConnection, consConn.Type)
+		assert.Equal(t, RedisConsumerConnection, consConn.Type)
 
 		// Test custom connection type
 		customConn, err := broker.GetRedisConnection("custom_redis")
@@ -64,10 +61,10 @@ func testRedisConnection(broker *gobroker.Broker) func(t *testing.T) {
 	}
 }
 
-func testRedisChannelCreation(broker *gobroker.Broker) func(t *testing.T) {
+func testRedisChannelCreation(broker *Broker) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Get connection
-		conn, err := broker.GetRedisConnection(gobroker.RedisPublishConnection)
+		conn, err := broker.GetRedisConnection(RedisPublishConnection)
 		assert.NoError(t, err)
 
 		// Create a channel
@@ -100,7 +97,7 @@ func testRedisChannelCreation(broker *gobroker.Broker) func(t *testing.T) {
 	}
 }
 
-func testRedisPublishSubscribe(broker *gobroker.Broker) func(t *testing.T) {
+func testRedisPublishSubscribe(broker *Broker) func(t *testing.T) {
 	return func(t *testing.T) {
 		testChannel := "test_channel"
 		var wg sync.WaitGroup
@@ -156,7 +153,7 @@ func testRedisPublishSubscribe(broker *gobroker.Broker) func(t *testing.T) {
 	}
 }
 
-func testRedisMultipleSubscribers(broker *gobroker.Broker) func(t *testing.T) {
+func testRedisMultipleSubscribers(broker *Broker) func(t *testing.T) {
 	return func(t *testing.T) {
 		testChannel := "multi_sub_channel"
 		subscriberCount := 3
@@ -204,13 +201,13 @@ func testRedisMultipleSubscribers(broker *gobroker.Broker) func(t *testing.T) {
 	}
 }
 
-func testRedisReconnection(broker *gobroker.Broker) func(t *testing.T) {
+func testRedisReconnection(broker *Broker) func(t *testing.T) {
 	return func(t *testing.T) {
 		// Note: This test is complex as it requires simulating a Redis server disconnect
 		// Here we'll test just the basic reconnection logic without actually shutting down Redis
 		
 		// Get Redis connection
-		conn, err := broker.GetRedisConnection(gobroker.RedisPublishConnection)
+		conn, err := broker.GetRedisConnection(RedisPublishConnection)
 		assert.NoError(t, err)
 		
 		// Simulate connection error by manually changing status

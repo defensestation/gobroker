@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	json "encoding/json"
 	"fmt"
 	"time"
@@ -18,7 +19,7 @@ func main() {
 	// create broker
 	// endpoint does not require to add protocol
 	// endpoint options can be provided: &EndpointOptions{Username: "guest", Password: "guest", Port: "5672"}
-	newbroker := broker.NewBroker("172.18.0.4", &broker.EndpointOptions{Username: "guest", Password: "guest", Port: "5672"})
+	newbroker := gobroker.NewBroker("172.18.0.4", gobroker.BrokerTypeRabbitMQ, &gobroker.EndpointOptions{Username: "guest", Password: "guest", Port: "5672"})
 
 	// build exchange
 	ex, err := newbroker.BuildExchange(exchangeName)
@@ -35,7 +36,7 @@ func main() {
 	}
 
 	// publish message to queue
-	err = ex.Publish(routeKey, message)
+	err = ex.Publish(context.TODO(),routeKey, message)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -47,7 +48,9 @@ func main() {
 // consume method
 func ConsumeMethod(message []byte) {
 	response := make(map[string]string)
-	json.Unmarshal(message, &response)
-
+	err := json.Unmarshal(message, &response)
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Printf("Message Recived:%v\n", response)
 }
