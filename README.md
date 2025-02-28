@@ -16,7 +16,7 @@ GoBroker is a unified messaging broker library for Go that provides a consistent
 ## Installation
 
 ```bash
-go install github.com/defensestation/gobroker@v2
+go install github.com/defensestation/gobroker/v2
 ```
 
 ## Dependencies
