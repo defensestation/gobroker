@@ -1,4 +1,4 @@
-# GoBroker
+# GoBroker v2
 
 GoBroker is a unified messaging broker library for Go that provides a consistent API for working with multiple message broker systems, including RabbitMQ, Redis pub/sub, and Amazon MQ.
 
@@ -16,7 +16,7 @@ GoBroker is a unified messaging broker library for Go that provides a consistent
 ## Installation
 
 ```bash
-go get github.com/yourusername/gobroker
+go get github.com/defensestation/gobroker
 ```
 
 ## Dependencies
