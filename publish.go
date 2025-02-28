@@ -49,7 +49,7 @@ func (e *Exchange) Publish(ctx context.Context, routekey string, body interface{
 	// publish message
 	err = ch.PublishWithContext(
 		ctx,
-		e.name, // exchange
+		e.name,              // exchange
 		routekey,            // routing key
 		publisOps.Mandatory, // mandatory
 		publisOps.Immediate, // immediate
@@ -103,7 +103,7 @@ func (b *Broker) PublishToExchange(ctx context.Context, exchangeName, routekey s
 	// publish message
 	err = ch.PublishWithContext(
 		ctx,
-		exchangeName, // exchange
+		exchangeName,        // exchange
 		routekey,            // routing key
 		publisOps.Mandatory, // mandatory
 		publisOps.Immediate, // immediate

@@ -64,12 +64,12 @@ func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte)
 	// build consumer
 	msgs, err := ch.Consume(
 		qName, // queue
-		"",     // consumer
-		true,   // auto ack
-		false,  // exclusive
-		false,  // no local
-		false,  // no wait
-		nil,    // args
+		"",    // consumer
+		true,  // auto ack
+		false, // exclusive
+		false, // no local
+		false, // no wait
+		nil,   // args
 	)
 	// check if any errors
 	if err != nil {
@@ -78,23 +78,23 @@ func (e *Exchange) RunConsumer(exchange, routeKey string, functions func([]byte)
 
 	// start consumer connection and send every message to functoion
 	go func() {
-	    rawConn := e.broker.connections[ConsumerConnection]
-	    conn, ok := rawConn.(*Connection)
-	    if !ok {
-	        log.Printf("failed to convert to *Connection") // log
-	        return                                       // exit goroutine
-	    }
+		rawConn := e.broker.connections[ConsumerConnection]
+		conn, ok := rawConn.(*Connection)
+		if !ok {
+			log.Printf("failed to convert to *Connection") // log
+			return                                         // exit goroutine
+		}
 
-	    ch, err := conn.GetChannel(ch.Id)
-	    if err != nil {
-	        log.Printf("failed to get channel: %v", err) // log
-	        return
-	    }
+		ch, err := conn.GetChannel(ch.Id)
+		if err != nil {
+			log.Printf("failed to get channel: %v", err) // log
+			return
+		}
 
-	    defer ch.Close() // ensure close even on error
-	    for d := range msgs {
-	        functions(d.Body)
-	    }
+		defer ch.Close() // ensure close even on error
+		for d := range msgs {
+			functions(d.Body)
+		}
 	}()
 
 	return nil

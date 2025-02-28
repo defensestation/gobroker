@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// publish message to queue
-	err = ex.Publish(context.TODO(),routeKey, message)
+	err = ex.Publish(context.TODO(), routeKey, message)
 	if err != nil {
 		fmt.Println(err)
 		return

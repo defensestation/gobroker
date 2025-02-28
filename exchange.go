@@ -10,8 +10,8 @@ import (
 
 // exchane struct
 type Exchange struct {
-	broker      *Broker
-	name        string
+	broker *Broker
+	name   string
 }
 
 // exchange options

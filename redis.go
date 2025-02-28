@@ -55,7 +55,7 @@ func (e *Broker) AddRedisConnection(ctype string) (*RedisConnection, error) {
 	// Check connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	_, err = client.Ping(ctx).Result()
 	if err != nil {
 		return nil, err
@@ -75,41 +75,40 @@ func (e *Broker) AddRedisConnection(ctype string) (*RedisConnection, error) {
 
 	// Start health check goroutine
 	go func() {
-	    ticker := time.NewTicker(30 * time.Second)
-	    defer ticker.Stop()
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
 
-	    for range ticker.C {
-	        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	        _, err := client.Ping(ctx).Result()
-	        cancel()
+		for range ticker.C {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_, err := client.Ping(ctx).Result()
+			cancel()
 
-	        if err != nil {
-	            connection.Status = "connection error"
-	            log.Printf("Redis connection error: %v", err)
+			if err != nil {
+				connection.Status = "connection error"
+				log.Printf("Redis connection error: %v", err)
 
-	            // Attempt to reconnect
-	            for {
-	                time.Sleep(time.Duration(delay) * time.Second)
-	                
-	                newClient := redis.NewClient(opts)
-	                ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	                _, err := newClient.Ping(ctx).Result()
-	                cancel()
+				// Attempt to reconnect
+				for {
+					time.Sleep(time.Duration(delay) * time.Second)
 
-	                if err == nil {
-	                    connection.Client = newClient
-	                    connection.Status = "live"
-	                    log.Printf("Redis connection re-established")
-	                    break
-	                }
+					newClient := redis.NewClient(opts)
+					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					_, err := newClient.Ping(ctx).Result()
+					cancel()
 
-	                log.Printf("Redis reconnect failed: %v", err)
-	                newClient.Close()
-	            }
-	        }
-	    }
+					if err == nil {
+						connection.Client = newClient
+						connection.Status = "live"
+						log.Printf("Redis connection re-established")
+						break
+					}
+
+					log.Printf("Redis reconnect failed: %v", err)
+					newClient.Close()
+				}
+			}
+		}
 	}()
-
 
 	return connection, nil
 }
@@ -185,7 +184,7 @@ func (c *RedisConnection) GetRedisChannel(id ...int) (*RedisChannel, error) {
 	if ch == nil {
 		return nil, errors.New("unable to find channel")
 	}
-	
+
 	// Check channel status
 	if ch.Status != "live" {
 		return nil, errors.New("channel status not live")
@@ -214,7 +213,7 @@ func (b *Broker) PublishToRedisChannel(channel string, body interface{}) error {
 	// Publish message
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	err = conn.Publish(ctx, channel, jsonString).Err()
 	if err != nil {
 		return err
@@ -252,7 +251,7 @@ func (b *Broker) RunRedisConsumer(channels []string, handler func([]byte)) error
 				log.Printf("Redis subscription error: %v", err)
 				ch.Status = "error"
 				time.Sleep(time.Duration(delay) * time.Second)
-				
+
 				// Try to resubscribe
 				pubsub = conn.Subscribe(context.Background(), channels...)
 				ch.pubsub = pubsub

@@ -10,7 +10,6 @@ import (
 	"strings"
 )
 
-
 // Define the reconnect delay
 var delay = 5 // 5 second delay for reconnection attempts
 
@@ -37,7 +36,6 @@ type Broker struct {
 	connections map[string]interface{}
 }
 
-
 // NewBroker creates a new broker with unified API
 func NewBroker(endpoint string, brokerType string, opts ...*EndpointOptions) *Broker {
 	var formattedEndpoint string
@@ -56,7 +54,7 @@ func NewBroker(endpoint string, brokerType string, opts ...*EndpointOptions) *Br
 				options.Port = "5671"
 			}
 
-			formattedEndpoint = fmt.Sprintf("%s://%s:%s@%s:%s/", 
+			formattedEndpoint = fmt.Sprintf("%s://%s:%s@%s:%s/",
 				options.Protocol, options.Username, options.Password, endpoint, options.Port)
 
 		case BrokerTypeRedis:
@@ -83,16 +81,16 @@ func NewBroker(endpoint string, brokerType string, opts ...*EndpointOptions) *Br
 				dbSuffix = fmt.Sprintf("/%d", options.DB)
 			}
 
-			formattedEndpoint = fmt.Sprintf("%s://%s%s:%s%s", 
+			formattedEndpoint = fmt.Sprintf("%s://%s%s:%s%s",
 				options.Protocol, auth, endpoint, options.Port, dbSuffix)
-				
+
 		case BrokerTypeAmazonMQ:
 			// For AmazonMQ, format should be username:password@host:port
 			if options.Port == "" {
 				options.Port = "61613" // Default STOMP port
 			}
-			
-			formattedEndpoint = fmt.Sprintf("%s:%s@%s:%s", 
+
+			formattedEndpoint = fmt.Sprintf("%s:%s@%s:%s",
 				options.Username, options.Password, endpoint, options.Port)
 		}
 	} else {
@@ -118,15 +116,15 @@ func (b *Broker) Publish(ctx context.Context, topic string, body interface{}) er
 		}
 		exchange, routeKey := parts[0], parts[1]
 		return b.PublishToExchange(ctx, exchange, routeKey, body)
-		
+
 	case BrokerTypeRedis:
 		// For Redis, topic is the channel name
 		return b.PublishToRedisChannel(topic, body)
-		
+
 	case BrokerTypeAmazonMQ:
 		// For Amazon MQ, topic is the destination queue/topic
 		return b.PublishToAmazonMQQueue(topic, body)
-		
+
 	default:
 		return fmt.Errorf("unsupported broker type: %s", b.Type)
 	}
@@ -142,23 +140,23 @@ func (b *Broker) Subscribe(topic string, handler func([]byte), queueName ...stri
 			return fmt.Errorf("invalid topic format for RabbitMQ, should be 'exchange.routekey'")
 		}
 		exchange, routeKey := parts[0], parts[1]
-		
+
 		// Use provided queue name or empty string for auto-generated queue
 		queue := ""
 		if len(queueName) > 0 {
 			queue = queueName[0]
 		}
-		
+
 		return b.RunConsumer(exchange, routeKey, handler, queue)
-		
+
 	case BrokerTypeRedis:
 		// For Redis, topic is the channel name
 		return b.RunRedisConsumer([]string{topic}, handler)
-		
+
 	case BrokerTypeAmazonMQ:
 		// For Amazon MQ, topic is the destination queue/topic
 		return b.RunAmazonMQConsumer(topic, handler)
-		
+
 	default:
 		return fmt.Errorf("unsupported broker type: %s", b.Type)
 	}
@@ -190,7 +188,7 @@ func (b *Broker) Close() {
 
 // only declare and bind
 func (b *Broker) QueueDeclareAndBind(exchange, routeKey, queueName string) (string, error) {
-	
+
 	conn, err := b.GetConnection(ConsumerConnection)
 	if err != nil {
 		return "", err
@@ -258,13 +256,13 @@ func (b *Broker) RunConsumer(exchange, routeKey string, functions func([]byte), 
 
 	// build consumer using the queue name from QueueDeclareAndBind
 	msgs, err := ch.Consume(
-		q,      // queue
-		"",     // consumer
-		true,   // auto ack
-		false,  // exclusive
-		false,  // no local
-		false,  // no wait
-		nil,    // args
+		q,     // queue
+		"",    // consumer
+		true,  // auto ack
+		false, // exclusive
+		false, // no local
+		false, // no wait
+		nil,   // args
 	)
 	// check if any errors
 	if err != nil {
