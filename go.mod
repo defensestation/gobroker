@@ -3,7 +3,6 @@ module github.com/defensestation/gobroker/v2
 go 1.24.0
 
 require (
-	github.com/defensestation/gobroker v0.0.0-20250228044521-ac467fc44000
 	github.com/go-stomp/stomp/v3 v3.1.3
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.7.1
