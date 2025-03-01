@@ -49,6 +49,10 @@ func (e *Broker) AddRedisConnection(ctype string) (*RedisConnection, error) {
 		return nil, err
 	}
 
+	if e.opts != nil && e.opts.TLSConfig != nil {
+		opts.TLSConfig = e.opts.TLSConfig
+	}
+	
 	// Create Redis client
 	client := redis.NewClient(opts)
 

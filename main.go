@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"crypto/tls"
 	"strings"
 )
 
@@ -27,10 +28,12 @@ type EndpointOptions struct {
 	Password string
 	Port     string
 	DB       int // For Redis
+	TLSConfig *tls.Config // TLS configuration for secure connection
 }
 
 // Broker represents a message broker connection
 type Broker struct {
+	opts *EndpointOptions
 	Endpoint    string
 	Type        string
 	connections map[string]interface{}
@@ -66,6 +69,11 @@ func NewBroker(endpoint string, brokerType string, opts ...*EndpointOptions) *Br
 				options.Port = "6379"
 			}
 
+			// If TLS configuration is provided, change protocol to secure redis (rediss)
+			if options.TLSConfig != nil {
+				options.Protocol = "rediss"
+			}
+
 			// Format Redis URL
 			auth := ""
 			if options.Password != "" {
@@ -96,9 +104,11 @@ func NewBroker(endpoint string, brokerType string, opts ...*EndpointOptions) *Br
 	} else {
 		// Use endpoint as-is if no options provided
 		formattedEndpoint = endpoint
+		opts = []*EndpointOptions{}
 	}
 
 	return &Broker{
+		opts: opts[0],
 		Endpoint:    formattedEndpoint,
 		Type:        brokerType,
 		connections: map[string]interface{}{},

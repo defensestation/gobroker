@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// From Redis
-	err = redisBroker.Subscribe("user:events", func(data []byte) {
+	err := redisBroker.Subscribe("user:events", func(data []byte) {
 		fmt.Printf("Received Redis message: %s\n", string(data))
 	})
 
@@ -45,7 +45,7 @@ func main() {
 
 	// Example of using the unified API
 	// To Redis
-	err := redisBroker.Publish(context.TODO(), "user:events", event)
+	err = redisBroker.Publish(context.TODO(), "user:events", event)
 	if err != nil {
 		log.Printf("Failed to publish to Redis: %v", err)
 	}
