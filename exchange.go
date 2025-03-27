@@ -59,7 +59,7 @@ func (b *Broker) BuildExchange(name string, opts ...*ExchangeOptions) (*Exchange
 		return nil, err
 	}
 	// close this channel as we do not require this active channel until we publish
-	defer ch.Close()
+	// defer ch.Close()
 
 	// set exchange options
 	err1 := ch.ExchangeDeclare(
