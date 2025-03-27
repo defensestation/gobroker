@@ -44,7 +44,7 @@ func (e *Exchange) Publish(ctx context.Context, routekey string, body interface{
 	}
 
 	publisOps := &PublishOptions{}
-	if len(opts) != 0 {
+	if len(opts) != 0 && opts[0] != nil {
 		publisOps = opts[0]
 	}
 
