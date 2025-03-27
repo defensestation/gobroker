@@ -38,10 +38,10 @@ func (e *Exchange) Publish(ctx context.Context, routekey string, body interface{
 	// do not close this channel. it will be used again for publishing messages
 	// defer ch.Close()
 
-	// validate routing key
-	if !validRouteKey(routekey) {
-		return errors.New("invalid routekey")
-	}
+	// // validate routing key
+	// if !validRouteKey(routekey) {
+	// 	return errors.New("invalid routekey")
+	// }
 
 	publisOps := &PublishOptions{}
 	if len(opts) != 0 && opts[0] != nil {
