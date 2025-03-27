@@ -9,6 +9,7 @@ import (
 	"log"
 	"crypto/tls"
 	"strings"
+	"github.com/streadway/amqp"
 )
 
 // Define the reconnect delay
@@ -291,4 +292,46 @@ func (b *Broker) RunConsumer(exchange, routeKey string, functions func([]byte), 
 	}()
 
 	return nil
+}
+
+
+// QueueDeclareAndBindWithOptions declares a queue with additional options and binds it to the exchange.
+func (b *Broker) QueueDeclareAndBindWithOptions(exchange, routeKey, queueName string, args amqp.Table) (string, error) {
+	conn, err := b.GetConnection(ConsumerConnection)
+	if err != nil {
+		return "", err
+	}
+
+	// Use a new channel from the consumer connection.
+	ch, err := conn.AddChannel()
+	if err != nil {
+		return "", err
+	}
+
+	// Declare the queue using the provided arguments.
+	q, err := ch.QueueDeclare(
+		queueName,         // name
+		true,              // durable
+		false,             // delete when unused
+		(queueName == ""), // exclusive if queueName is empty
+		false,             // no-wait
+		args,              // extra arguments (e.g., TTL, DLX, etc.)
+	)
+	if err != nil {
+		return "", err
+	}
+
+	// Bind the queue to the exchange using the given routing key.
+	err = ch.QueueBind(
+		q.Name,   // queue name
+		routeKey, // routing key
+		exchange, // exchange name
+		false,    // no-wait
+		nil,      // no additional arguments
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return q.Name, nil
 }
