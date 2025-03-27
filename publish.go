@@ -57,10 +57,10 @@ func (e *Exchange) Publish(ctx context.Context, routekey string, body interface{
 		publishOptions.Expiration = publisOps.Expiration
 	}
 
-	if publisOps.DeliveryMode != "" {
+	if publisOps.DeliveryMode != 0 {
 		publishOptions.DeliveryMode = publisOps.DeliveryMode
 	}
-	
+
 	// publish message
 	err = ch.PublishWithContext(
 		ctx,
