@@ -9,7 +9,7 @@ import (
 	"log"
 	"crypto/tls"
 	"strings"
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 // Define the reconnect delay
@@ -296,7 +296,7 @@ func (b *Broker) RunConsumer(exchange, routeKey string, functions func([]byte), 
 
 
 // QueueDeclareAndBindWithOptions declares a queue with additional options and binds it to the exchange.
-func (b *Broker) QueueDeclareAndBindWithOptions(exchange, routeKey, queueName string, args amqp.Table) (string, error) {
+func (b *Broker) QueueDeclareAndBindWithOptions(exchange, routeKey, queueName string, args amqp091.Table) (string, error) {
 	conn, err := b.GetConnection(ConsumerConnection)
 	if err != nil {
 		return "", err
