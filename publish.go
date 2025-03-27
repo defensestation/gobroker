@@ -14,6 +14,8 @@ import (
 type PublishOptions struct {
 	Mandatory bool
 	Immediate bool
+	Expiration string
+	DeliveryMode string
 }
 
 // expose method to publish messages to exchange
@@ -46,6 +48,19 @@ func (e *Exchange) Publish(ctx context.Context, routekey string, body interface{
 		publisOps = opts[0]
 	}
 
+	publishOptions := amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(jsonString),
+		}
+
+	if publisOps.Expiration != "" {
+		publishOptions.Expiration = publisOps.Expiration
+	}
+
+	if publisOps.DeliveryMode != "" {
+		publishOptions.DeliveryMode = publisOps.DeliveryMode
+	}
+	
 	// publish message
 	err = ch.PublishWithContext(
 		ctx,
@@ -53,10 +68,8 @@ func (e *Exchange) Publish(ctx context.Context, routekey string, body interface{
 		routekey,            // routing key
 		publisOps.Mandatory, // mandatory
 		publisOps.Immediate, // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(jsonString),
-		})
+		publishOptions,
+	)
 	// return err
 	if err != nil {
 		return err
