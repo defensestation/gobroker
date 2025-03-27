@@ -62,7 +62,7 @@ func (b *Broker) BuildExchange(name string, opts ...*ExchangeOptions) (*Exchange
 	defer ch.Close()
 
 	// set exchange options
-	err = ch.ExchangeDeclare(
+	err1 = ch.ExchangeDeclare(
 		name,
 		options.Type,
 		options.Durable,
@@ -71,8 +71,8 @@ func (b *Broker) BuildExchange(name string, opts ...*ExchangeOptions) (*Exchange
 		options.NoWait,
 		options.Args,
 	)
-	if err != nil {
-		return nil, err
+	if err1 != nil {
+		return nil, err1
 	}
 	return exchange, nil
 }
