@@ -15,7 +15,7 @@ type PublishOptions struct {
 	Mandatory bool
 	Immediate bool
 	Expiration string
-	DeliveryMode string
+	DeliveryMode uint8
 }
 
 // expose method to publish messages to exchange
